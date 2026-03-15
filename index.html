@@ -151,8 +151,9 @@
             try {
                 const prompt = `Find current market data for "${queryVal}" in Japan. Respond strictly in JSON format: {"results": [{"name", "amazon_price", "image_url", "amazon_url"}], "average_market_price": number}`;
                 
-                // エンドポイントを最新の gemini-2.0-flash-exp に変更
-                const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${geminiApiKey}`;
+                // 修正：v1beta の gemini-2.0-flash-exp を指定
+                const modelName = "gemini-2.0-flash-exp"; 
+                const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${geminiApiKey}`;
                 
                 const response = await fetch(endpoint, {
                     method: 'POST',
@@ -169,7 +170,7 @@
                 
                 if (!response.ok) {
                     const errData = await response.json();
-                    throw new Error(errData.error?.message || "APIエラーが発生しました。");
+                    throw new Error(`[${modelName}] ${errData.error?.message || "APIエラー"}`);
                 }
                 
                 const data = await response.json();
@@ -180,7 +181,7 @@
                 resultsSection.classList.remove('hidden');
             } catch (error) {
                 console.error("Search Error:", error);
-                alert("検索エラー: " + error.message);
+                alert("検索エラー: " + error.message + "\n\n解決しない場合はAPIキーの権限設定を確認してください。");
             } finally {
                 btn.disabled = false;
                 btnText.innerText = '情報を検索';
@@ -239,5 +240,4 @@
         }
     </script>
 </body>
-</html>
 </html>
