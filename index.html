@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shoe Finder Pro - 安定版</title>
+    <title>Shoe Finder Pro - クォータ対策版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
@@ -43,7 +43,10 @@
                     <div id="loadingSpinner" class="spinner hidden ml-3 w-5 h-5"></div>
                 </button>
             </div>
-            <p class="text-[10px] text-slate-500 mt-4 tracking-widest uppercase">Powered by Gemini 2.0 Flash & Grounding Search</p>
+            <div id="statusInfo" class="text-[10px] text-slate-500 mt-4 tracking-widest uppercase flex justify-between">
+                <span>Powered by Gemini 1.5 Flash (Stabilized)</span>
+                <span id="quotaTimer" class="text-amber-500 hidden text-right"></span>
+            </div>
         </section>
 
         <div id="resultsSection" class="hidden mb-16 animate-fade-in">
@@ -125,33 +128,45 @@
 
             const btn = document.getElementById('searchBtn');
             const spinner = document.getElementById('loadingSpinner');
+            const quotaDisplay = document.getElementById('quotaTimer');
             btn.disabled = true; spinner.classList.remove('hidden');
+            quotaDisplay.classList.add('hidden');
 
             try {
-                // モデル名を gemini-1.5-flash-latest または gemini-2.0-flash に変更
-                const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`;
+                // モデル名を最も安定している gemini-1.5-flash-latest に変更
+                const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`;
                 
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: `調査依頼: "${queryVal}" の日本国内の現在価格と情報を教えてください。JSON形式: {"results": [{"name", "amazon_price", "image_url", "amazon_url"}], "average_market_price": number}` }] }],
+                        contents: [{ parts: [{ text: `調査依頼: "${queryVal}" の日本国内の市場価格と情報を教えてください。JSON形式: {"results": [{"name", "amazon_price", "image_url", "amazon_url"}], "average_market_price": number}` }] }],
                         tools: [{ "google_search": {} }],
-                        generationConfig: { responseMimeType: "application/json" }
+                        generationConfig: { 
+                            responseMimeType: "application/json",
+                            temperature: 0.5 
+                        }
                     })
                 });
 
                 const data = await response.json();
                 
-                // エラーレスポンスのチェックを強化
-                if (data.error) throw new Error(`${data.error.message} (${data.error.status})`);
-                if (!data.candidates) throw new Error("AIからの応答がありませんでした。APIキーの設定を確認してください。");
+                if (response.status === 429) {
+                    throw new Error("APIの無料枠制限を超えました。1分ほど待ってから再度お試しください。");
+                }
+                
+                if (data.error) throw new Error(`${data.error.message}`);
+                if (!data.candidates || !data.candidates[0].content) throw new Error("AIから有効な回答が得られませんでした。");
 
                 const resultData = JSON.parse(data.candidates[0].content.parts[0].text);
                 renderResults(resultData);
             } catch (error) {
                 console.error(error);
-                alert("エラーが発生しました: " + error.message);
+                if (error.message.includes("429") || error.message.includes("limit")) {
+                    quotaDisplay.innerText = "制限超過: 1分待機してください";
+                    quotaDisplay.classList.remove('hidden');
+                }
+                alert(error.message);
             } finally {
                 btn.disabled = false; spinner.classList.add('hidden');
             }
@@ -187,7 +202,7 @@
                 const card = document.createElement('div');
                 card.className = 'glass-card rounded-2xl overflow-hidden relative group';
                 card.innerHTML = `
-                    <button onclick="removeFromCollection('${item.id}')" class="absolute top-2 right-2 bg-red-500 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all">✕</button>
+                    <button onclick="removeFromCollection('${item.id}')" class="absolute top-2 right-2 bg-red-500 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg">✕</button>
                     <div class="h-32 bg-slate-900"><img src="${item.image_url}" class="w-full h-full object-cover"></div>
                     <div class="p-3 bg-slate-800/50"><p class="text-[10px] text-slate-400 truncate">${item.name}</p></div>
                 `;
