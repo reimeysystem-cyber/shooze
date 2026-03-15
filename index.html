@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shoe Finder Pro</title>
+    <title>Shoe Finder & Collector Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
@@ -12,61 +12,66 @@
         .spinner { border: 3px solid rgba(255, 255, 255, 0.1); border-top: 3px solid #3b82f6; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         #authOverlay { position: fixed; inset: 0; background: #0f172a; z-index: 50; display: flex; align-items: center; justify-content: center; transition: opacity 0.5s; }
-        .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="min-h-screen pb-20">
 
     <div id="authOverlay">
         <div class="text-center">
-            <div id="loaderIcon" class="spinner w-12 h-12 border-t-blue-500 mb-4 mx-auto"></div>
-            <p id="loaderText" class="text-slate-400 animate-pulse">システム起動中...</p>
+            <div class="spinner w-12 h-12 border-t-blue-500 mb-4 mx-auto"></div>
+            <p class="text-slate-400 animate-pulse">データを読み込み中...</p>
         </div>
     </div>
 
-    <header class="py-10 px-4 text-center">
-        <h1 class="text-5xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-blue-400 via-indigo-400 to-emerald-400 mb-2">
+    <header class="py-8 px-4 text-center">
+        <h1 class="text-4xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">
             SHOE FINDER PRO
         </h1>
-        <p class="text-slate-400 text-lg">AIによる市場調査 & ピックアップ管理</p>
+        <p class="text-slate-400 mt-2">最新の価格を検索して自分だけのリストを保存</p>
     </header>
 
     <main class="max-w-6xl mx-auto px-4">
-        <section class="glass-card rounded-3xl p-8 mb-12 shadow-2xl border-blue-500/20">
+        <section class="glass-card rounded-2xl p-6 mb-10 shadow-xl">
             <div class="flex flex-col md:flex-row gap-4">
-                <input type="text" id="searchInput" placeholder="靴のモデル名を入力 (例: Air Jordan 1)" 
-                    class="flex-grow bg-slate-900/50 border border-slate-700 rounded-xl px-5 py-4 text-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                <div class="flex-grow relative">
+                    <input type="text" id="searchInput" placeholder="靴のモデル名やブランドを入力 (例: Nike Air Max 95)" 
+                        class="w-full bg-slate-800 border border-slate-700 rounded-lg pl-4 pr-12 py-3 focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
                 <button onclick="searchShoes()" id="searchBtn"
-                    class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-4 px-10 rounded-xl transition-all flex items-center justify-center min-w-[180px]">
-                    <span id="btnText">検索開始</span>
-                    <div id="loadingSpinner" class="spinner hidden ml-3 w-5 h-5"></div>
+                    class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 rounded-lg transition-all flex items-center justify-center min-w-[140px]">
+                    <span id="btnText">情報を検索</span>
+                    <div id="loadingSpinner" class="spinner hidden ml-2"></div>
                 </button>
             </div>
-            <div id="statusInfo" class="text-[10px] text-slate-500 mt-4 tracking-widest uppercase flex justify-between">
-                <span>Powered by Gemini 1.5 Flash</span>
-                <span id="quotaTimer" class="text-amber-500 hidden text-right"></span>
+            <div class="flex justify-between items-center mt-2">
+                <p class="text-xs text-slate-500">※実際の価格と異なる場合があります。</p>
+                <div id="userStatus" class="text-[10px] text-slate-600">ID: Loading...</div>
             </div>
         </section>
 
-        <div id="resultsSection" class="hidden mb-16 animate-fade-in">
-            <div class="flex justify-between items-baseline mb-6 px-2">
-                <h2 class="text-2xl font-bold text-white flex items-center"><span class="text-blue-500 mr-3">●</span>検索結果</h2>
-                <div class="glass-card px-4 py-2 rounded-full border-emerald-500/30">
-                    <span class="text-slate-400 text-sm">平均価格目安:</span>
-                    <span id="avgPrice" class="text-emerald-400 font-bold text-lg ml-2">---</span>
+        <div id="resultsSection" class="hidden mb-12">
+            <div class="flex justify-between items-end mb-4 px-2">
+                <h2 class="text-xl font-bold text-blue-300">検索結果</h2>
+                <div class="text-right">
+                    <span class="text-slate-400 text-sm">市場平均価格目安:</span>
+                    <span id="avgPrice" class="text-emerald-400 font-bold ml-1">---</span>
                 </div>
             </div>
-            <div id="resultsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+            <div id="resultsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
         </div>
 
-        <section class="animate-fade-in">
-            <h2 class="text-3xl font-black text-white mb-8 px-2 flex items-center">
-                <span class="mr-3 text-yellow-500">★</span>MY COLLECTION
-            </h2>
-            <div id="collectionGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
-            <div id="emptyCollection" class="text-center py-20 glass-card rounded-3xl border-dashed border-2 border-slate-800 text-slate-500">
-                ピックアップした靴はここに表示されます。
+        <hr class="border-slate-800 mb-12">
+
+        <section>
+            <div class="flex justify-between items-center mb-6 px-2">
+                <h2 class="text-2xl font-bold flex items-center">
+                    <span class="mr-2">⭐</span> 自分のピックアップリスト
+                </h2>
+                <div class="text-sm text-slate-400" id="collectionCount">0 items</div>
+            </div>
+            <div id="collectionGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"></div>
+            <div id="emptyCollection" class="text-center py-10 text-slate-500">
+                まだピックアップした靴はありません。
             </div>
         </section>
     </main>
@@ -76,21 +81,22 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, addDoc, deleteDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // GitHub Actionsによって自動的に本物のキーに置き換わります
+        // deploy.yml の __...__ 形式に合わせました
         const firebaseConfig = {
-            apiKey: "REPLACE_WITH_FIREBASE_API_KEY",
-            authDomain: "REPLACE_WITH_FIREBASE_AUTH_DOMAIN",
-            projectId: "REPLACE_WITH_FIREBASE_PROJECT_ID",
-            storageBucket: "REPLACE_WITH_FIREBASE_STORAGE_BUCKET",
-            messagingSenderId: "REPLACE_WITH_FIREBASE_MESSAGING_SENDER_ID",
-            appId: "REPLACE_WITH_FIREBASE_APP_ID"
+            apiKey: "__FIREBASE_API_KEY__",
+            authDomain: "__FIREBASE_AUTH_DOMAIN__",
+            projectId: "__FIREBASE_PROJECT_ID__",
+            storageBucket: "__FIREBASE_STORAGE_BUCKET__",
+            messagingSenderId: "__FIREBASE_MESSAGING_SENDER_ID__",
+            appId: "__FIREBASE_APP_ID__"
         };
-        const geminiApiKey = "REPLACE_WITH_GEMINI_API_KEY";
+        const geminiApiKey = "__GEMINI_API_KEY__";
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
         const appId = "shoe-collector-v2";
+
         let currentUser = null;
 
         onAuthStateChanged(auth, (user) => {
@@ -98,83 +104,110 @@
             if (user) {
                 document.getElementById('authOverlay').style.opacity = '0';
                 setTimeout(() => document.getElementById('authOverlay').style.display = 'none', 500);
+                document.getElementById('userStatus').innerText = `User ID: ${user.uid.substring(0, 8)}...`;
                 setupCollectionListener(user.uid);
             }
         });
-        signInAnonymously(auth);
+
+        const initAuth = async () => {
+            try {
+                await signInAnonymously(auth);
+            } catch (error) {
+                console.error("Auth error:", error);
+            }
+        };
+        initAuth();
 
         function setupCollectionListener(uid) {
-            const colRef = collection(db, 'artifacts', appId, 'users', uid, 'shoes');
-            onSnapshot(colRef, (snap) => {
+            const collectionRef = collection(db, 'artifacts', appId, 'users', uid, 'shoes');
+            onSnapshot(collectionRef, (snapshot) => {
                 const shoes = [];
-                snap.forEach(d => shoes.push({ id: d.id, ...d.data() }));
+                snapshot.forEach(doc => {
+                    shoes.push({ id: doc.id, ...doc.data() });
+                });
+                shoes.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
                 updateCollectionUI(shoes);
-            }, (err) => console.error("Firestore Error:", err));
+            }, (error) => console.error("Sync error:", error));
         }
 
         window.addToCollection = async (item) => {
             if (!currentUser) return;
-            const colRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'shoes');
-            await addDoc(colRef, { ...item, createdAt: serverTimestamp() });
+            try {
+                const collectionRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'shoes');
+                await addDoc(collectionRef, { ...item, createdAt: serverTimestamp() });
+            } catch (error) { console.error("Save error:", error); }
         };
 
-        window.removeFromCollection = async (id) => {
-            const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'shoes', id);
-            await deleteDoc(docRef);
+        window.removeFromCollection = async (docId) => {
+            if (!currentUser) return;
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'shoes', docId);
+                await deleteDoc(docRef);
+            } catch (error) { console.error("Delete error:", error); }
         };
 
         window.searchShoes = async () => {
             const queryVal = document.getElementById('searchInput').value;
             if (!queryVal) return;
-
             const btn = document.getElementById('searchBtn');
+            const btnText = document.getElementById('btnText');
             const spinner = document.getElementById('loadingSpinner');
-            btn.disabled = true; spinner.classList.remove('hidden');
+            const resultsSection = document.getElementById('resultsSection');
+
+            btn.disabled = true;
+            btnText.innerText = '検索中...';
+            spinner.classList.remove('hidden');
 
             try {
-                // モデル指定を最新かつ標準的な形式に修正
+                const prompt = `Search for "${queryVal}" on Amazon.co.jp. Return JSON ONLY: {"results": [{"name", "amazon_price", "image_url", "amazon_url"}], "average_market_price": number}`;
+                
+                // エンドポイントを 1.5-flash に固定して404を回避
                 const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
                 
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: `調査依頼: "${queryVal}" の日本国内の市場価格と情報を教えてください。JSON形式: {"results": [{"name", "amazon_price", "image_url", "amazon_url"}], "average_market_price": number}` }] }],
+                        contents: [{ parts: [{ text: prompt }] }],
                         tools: [{ "google_search": {} }],
                         generationConfig: { responseMimeType: "application/json" }
                     })
                 });
-
+                
+                if (response.status === 404) throw new Error("モデルエンドポイントが見つかりません。");
+                
                 const data = await response.json();
-                if (data.error) throw new Error(data.error.message);
-                if (!data.candidates) throw new Error("AI回答の取得に失敗しました。");
-
                 const resultData = JSON.parse(data.candidates[0].content.parts[0].text);
-                renderResults(resultData);
+                displaySearchResults(resultData);
+                resultsSection.classList.remove('hidden');
             } catch (error) {
-                console.error(error);
-                alert("検索エラー: " + error.message);
+                console.error("Search Error:", error);
+                alert("検索中にエラーが発生しました: " + error.message);
             } finally {
-                btn.disabled = false; spinner.classList.add('hidden');
+                btn.disabled = false;
+                btnText.innerText = '情報を検索';
+                spinner.classList.add('hidden');
             }
         };
 
-        function renderResults(data) {
+        function displaySearchResults(data) {
             const grid = document.getElementById('resultsGrid');
             const avgDisplay = document.getElementById('avgPrice');
             grid.innerHTML = '';
-            document.getElementById('resultsSection').classList.remove('hidden');
             avgDisplay.innerText = `¥${Number(data.average_market_price || 0).toLocaleString()}`;
-
-            (data.results || []).forEach(item => {
+            (data.results || []).forEach((item) => {
                 const card = document.createElement('div');
-                card.className = 'glass-card rounded-2xl overflow-hidden flex flex-col transition-all hover:scale-105';
+                card.className = 'glass-card rounded-xl overflow-hidden shadow-lg border-blue-500/30 border flex flex-col transition-transform hover:scale-[1.02]';
+                const safeUrl = item.amazon_url?.includes('amazon') ? item.amazon_url : `https://www.amazon.co.jp/s?k=${encodeURIComponent(item.name)}`;
                 card.innerHTML = `
-                    <div class="h-48 bg-slate-900"><img src="${item.image_url}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400';"></div>
-                    <div class="p-5 flex-grow">
-                        <h4 class="font-bold text-white text-sm line-clamp-2 mb-3">${item.name}</h4>
-                        <p class="text-emerald-400 text-xl font-black mb-4">¥${Number(item.amazon_price).toLocaleString()}</p>
-                        <button onclick='addToCollection(${JSON.stringify(item).replace(/'/g, "&apos;")})' class="w-full bg-blue-600 hover:bg-blue-500 py-3 rounded-xl font-bold">ピックアップ</button>
+                    <div class="h-48 bg-slate-900 overflow-hidden relative"><img src="${item.image_url}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400';"></div>
+                    <div class="p-4 flex-grow flex flex-col">
+                        <h4 class="font-bold text-white text-sm line-clamp-2 mb-2">${item.name}</h4>
+                        <p class="text-emerald-400 font-bold mb-4 mt-auto">¥${Number(item.amazon_price).toLocaleString()}</p>
+                        <div class="flex gap-2">
+                            <button onclick='addToCollection(${JSON.stringify(item).replace(/'/g, "&apos;")})' class="flex-grow bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-2 rounded transition-all">ピックアップ</button>
+                            <a href="${safeUrl}" target="_blank" class="bg-orange-500 p-2 rounded hover:bg-orange-400 w-10 flex items-center justify-center text-white text-xs font-bold">A</a>
+                        </div>
                     </div>
                 `;
                 grid.appendChild(card);
@@ -183,15 +216,25 @@
 
         function updateCollectionUI(shoes) {
             const grid = document.getElementById('collectionGrid');
+            const empty = document.getElementById('emptyCollection');
+            const countDisplay = document.getElementById('collectionCount');
             grid.innerHTML = '';
-            document.getElementById('emptyCollection').classList.toggle('hidden', shoes.length > 0);
-            shoes.forEach(item => {
+            countDisplay.innerText = `${shoes.length} items`;
+            if (shoes.length === 0) { empty.classList.remove('hidden'); return; }
+            empty.classList.add('hidden');
+            shoes.forEach((item) => {
                 const card = document.createElement('div');
-                card.className = 'glass-card rounded-2xl overflow-hidden relative group';
+                card.className = 'glass-card rounded-xl overflow-hidden flex flex-col relative group animate-fade-in';
                 card.innerHTML = `
-                    <button onclick="removeFromCollection('${item.id}')" class="absolute top-2 right-2 bg-red-500 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg">✕</button>
-                    <div class="h-32 bg-slate-900"><img src="${item.image_url}" class="w-full h-full object-cover"></div>
-                    <div class="p-3 bg-slate-800/50"><p class="text-[10px] text-slate-400 truncate">${item.name}</p></div>
+                    <button onclick="removeFromCollection('${item.id}')" class="absolute top-2 right-2 z-10 bg-red-500/80 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"><svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="6 18L18 6M6 6l12 12"></path></svg></button>
+                    <div class="h-32 bg-slate-900"><img src="${item.image_url}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400'"></div>
+                    <div class="p-3">
+                        <p class="text-[10px] text-slate-400 truncate mb-1">${item.name}</p>
+                        <div class="flex justify-between items-center">
+                            <p class="text-sm font-bold text-emerald-400">¥${Number(item.amazon_price).toLocaleString()}</p>
+                            <a href="https://www.amazon.co.jp/s?k=${encodeURIComponent(item.name)}" target="_blank" class="text-slate-500 hover:text-orange-400"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg></a>
+                        </div>
+                    </div>
                 `;
                 grid.appendChild(card);
             });
