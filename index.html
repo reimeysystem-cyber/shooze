@@ -149,10 +149,10 @@
             spinner.classList.remove('hidden');
 
             try {
-                const prompt = `日本国内の "${queryVal}" に関する市場調査。以下のJSON形式でのみ回答してください: {"results": [{"name", "amazon_price", "image_url", "amazon_url"}], "average_market_price": number}`;
+                const prompt = `Search for market data of "${queryVal}" in Japan. Respond strictly in the following JSON format: {"results": [{"name", "amazon_price", "image_url", "amazon_url"}], "average_market_price": number}`;
                 
-                // 修正ポイント: モデル名を 'models/gemini-1.5-flash' に修正
-                const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
+                // 修正ポイント: Google検索ツールを使用する場合、具体的なバージョン番号付きのモデル名が必要です
+                const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-001:generateContent?key=${geminiApiKey}`;
                 
                 const response = await fetch(endpoint, {
                     method: 'POST',
@@ -160,7 +160,10 @@
                     body: JSON.stringify({
                         contents: [{ parts: [{ text: prompt }] }],
                         tools: [{ "google_search": {} }],
-                        generationConfig: { responseMimeType: "application/json" }
+                        generationConfig: { 
+                            responseMimeType: "application/json",
+                            temperature: 0.2
+                        }
                     })
                 });
                 
