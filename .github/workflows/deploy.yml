@@ -16,7 +16,7 @@ jobs:
 
       - name: Inject Secrets into HTML
         run: |
-          # 確実に置換されるよう、区切り文字に | を使用し、対象ファイルを明示
+          # 確実に置換されるよう、区切り文字に | を使用し、対象ファイル index.html を明示
           sed -i "s|__FIREBASE_API_KEY__|${{ secrets.FIREBASE_API_KEY }}|g" index.html
           sed -i "s|__FIREBASE_AUTH_DOMAIN__|${{ secrets.FIREBASE_AUTH_DOMAIN }}|g" index.html
           sed -i "s|__FIREBASE_PROJECT_ID__|${{ secrets.FIREBASE_PROJECT_ID }}|g" index.html
