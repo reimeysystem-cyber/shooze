@@ -81,7 +81,6 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, addDoc, deleteDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // deploy.yml の __...__ 形式に合わせました
         const firebaseConfig = {
             apiKey: "__FIREBASE_API_KEY__",
             authDomain: "__FIREBASE_AUTH_DOMAIN__",
@@ -109,22 +108,13 @@
             }
         });
 
-        const initAuth = async () => {
-            try {
-                await signInAnonymously(auth);
-            } catch (error) {
-                console.error("Auth error:", error);
-            }
-        };
-        initAuth();
+        signInAnonymously(auth).catch(e => console.error("Auth error:", e));
 
         function setupCollectionListener(uid) {
             const collectionRef = collection(db, 'artifacts', appId, 'users', uid, 'shoes');
             onSnapshot(collectionRef, (snapshot) => {
                 const shoes = [];
-                snapshot.forEach(doc => {
-                    shoes.push({ id: doc.id, ...doc.data() });
-                });
+                snapshot.forEach(doc => shoes.push({ id: doc.id, ...doc.data() }));
                 shoes.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
                 updateCollectionUI(shoes);
             }, (error) => console.error("Sync error:", error));
@@ -159,9 +149,9 @@
             spinner.classList.remove('hidden');
 
             try {
-                const prompt = `Search for "${queryVal}" on Amazon.co.jp. Return JSON ONLY: {"results": [{"name", "amazon_price", "image_url", "amazon_url"}], "average_market_price": number}`;
+                const prompt = `日本国内の "${queryVal}" に関する市場調査。以下のJSON形式でのみ回答してください: {"results": [{"name", "amazon_price", "image_url", "amazon_url"}], "average_market_price": number}`;
                 
-                // エンドポイントを 1.5-flash に固定して404を回避
+                // 修正ポイント: モデル名を 'models/gemini-1.5-flash' に修正
                 const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
                 
                 const response = await fetch(endpoint, {
@@ -174,9 +164,14 @@
                     })
                 });
                 
-                if (response.status === 404) throw new Error("モデルエンドポイントが見つかりません。");
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(errData.error?.message || "通信エラーが発生しました。");
+                }
                 
                 const data = await response.json();
+                if (!data.candidates || !data.candidates[0].content) throw new Error("AIから有効な回答が得られませんでした。");
+                
                 const resultData = JSON.parse(data.candidates[0].content.parts[0].text);
                 displaySearchResults(resultData);
                 resultsSection.classList.remove('hidden');
