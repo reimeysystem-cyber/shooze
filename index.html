@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shoe Finder Pro - 安定版</title>
+    <title>Shoe Finder Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
@@ -44,7 +44,7 @@
                 </button>
             </div>
             <div id="statusInfo" class="text-[10px] text-slate-500 mt-4 tracking-widest uppercase flex justify-between">
-                <span>Powered by Gemini 1.5 Flash (Free Tier)</span>
+                <span>Powered by Gemini 1.5 Flash</span>
                 <span id="quotaTimer" class="text-amber-500 hidden text-right"></span>
             </div>
         </section>
@@ -76,6 +76,7 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, addDoc, deleteDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // GitHub Actionsによって自動的に本物のキーに置き換わります
         const firebaseConfig = {
             apiKey: "REPLACE_WITH_FIREBASE_API_KEY",
             authDomain: "REPLACE_WITH_FIREBASE_AUTH_DOMAIN",
@@ -108,7 +109,7 @@
                 const shoes = [];
                 snap.forEach(d => shoes.push({ id: d.id, ...d.data() }));
                 updateCollectionUI(shoes);
-            });
+            }, (err) => console.error("Firestore Error:", err));
         }
 
         window.addToCollection = async (item) => {
@@ -128,12 +129,10 @@
 
             const btn = document.getElementById('searchBtn');
             const spinner = document.getElementById('loadingSpinner');
-            const quotaDisplay = document.getElementById('quotaTimer');
             btn.disabled = true; spinner.classList.remove('hidden');
-            quotaDisplay.classList.add('hidden');
 
             try {
-                // モデル名を 正しい 'gemini-1.5-flash' に変更
+                // モデル指定を最新かつ標準的な形式に修正
                 const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
                 
                 const response = await fetch(endpoint, {
@@ -142,29 +141,18 @@
                     body: JSON.stringify({
                         contents: [{ parts: [{ text: `調査依頼: "${queryVal}" の日本国内の市場価格と情報を教えてください。JSON形式: {"results": [{"name", "amazon_price", "image_url", "amazon_url"}], "average_market_price": number}` }] }],
                         tools: [{ "google_search": {} }],
-                        generationConfig: { 
-                            responseMimeType: "application/json"
-                        }
+                        generationConfig: { responseMimeType: "application/json" }
                     })
                 });
 
                 const data = await response.json();
-                
-                if (response.status === 404) {
-                    throw new Error("モデルが見つかりませんでした (404)。エンドポイントの設定を確認してください。");
-                }
-                
-                if (data.error) throw new Error(`${data.error.message}`);
-                if (!data.candidates || !data.candidates[0].content) throw new Error("AIから有効な回答が得られませんでした。");
+                if (data.error) throw new Error(data.error.message);
+                if (!data.candidates) throw new Error("AI回答の取得に失敗しました。");
 
                 const resultData = JSON.parse(data.candidates[0].content.parts[0].text);
                 renderResults(resultData);
             } catch (error) {
                 console.error(error);
-                if (error.message.includes("429") || error.message.includes("limit")) {
-                    quotaDisplay.innerText = "制限超過: 少し待機してください";
-                    quotaDisplay.classList.remove('hidden');
-                }
                 alert("検索エラー: " + error.message);
             } finally {
                 btn.disabled = false; spinner.classList.add('hidden');
