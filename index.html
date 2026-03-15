@@ -151,15 +151,15 @@
             try {
                 const prompt = `Find current market data for "${queryVal}" in Japan. Respond strictly in JSON format: {"results": [{"name", "amazon_price", "image_url", "amazon_url"}], "average_market_price": number}`;
                 
-                // エンドポイントを v1beta の gemini-1.5-flash に修正（モデル名に models/ を含める）
-                const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
+                // エンドポイントを最新の gemini-2.0-flash-exp に変更
+                const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${geminiApiKey}`;
                 
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: [{ parts: [{ text: prompt }] }],
-                        tools: [{ "google_search": {} }], // 検索ツールを有効化
+                        tools: [{ "google_search": {} }],
                         generationConfig: { 
                             responseMimeType: "application/json",
                             temperature: 0.1
@@ -169,11 +169,11 @@
                 
                 if (!response.ok) {
                     const errData = await response.json();
-                    throw new Error(errData.error?.message || "API通信エラー");
+                    throw new Error(errData.error?.message || "APIエラーが発生しました。");
                 }
                 
                 const data = await response.json();
-                if (!data.candidates || !data.candidates[0].content) throw new Error("AI回答の形式が不正です");
+                if (!data.candidates || !data.candidates[0].content) throw new Error("AIから有効な回答が得られませんでした。");
                 
                 const resultData = JSON.parse(data.candidates[0].content.parts[0].text);
                 displaySearchResults(resultData);
@@ -239,4 +239,5 @@
         }
     </script>
 </body>
+</html>
 </html>
