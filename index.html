@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shoe Finder Pro - クォータ対策版</title>
+    <title>Shoe Finder Pro - 安定版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
@@ -44,7 +44,7 @@
                 </button>
             </div>
             <div id="statusInfo" class="text-[10px] text-slate-500 mt-4 tracking-widest uppercase flex justify-between">
-                <span>Powered by Gemini 1.5 Flash (Stabilized)</span>
+                <span>Powered by Gemini 1.5 Flash (Free Tier)</span>
                 <span id="quotaTimer" class="text-amber-500 hidden text-right"></span>
             </div>
         </section>
@@ -133,8 +133,8 @@
             quotaDisplay.classList.add('hidden');
 
             try {
-                // モデル名を最も安定している gemini-1.5-flash-latest に変更
-                const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`;
+                // モデル名を 正しい 'gemini-1.5-flash' に変更
+                const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
                 
                 const response = await fetch(endpoint, {
                     method: 'POST',
@@ -143,16 +143,15 @@
                         contents: [{ parts: [{ text: `調査依頼: "${queryVal}" の日本国内の市場価格と情報を教えてください。JSON形式: {"results": [{"name", "amazon_price", "image_url", "amazon_url"}], "average_market_price": number}` }] }],
                         tools: [{ "google_search": {} }],
                         generationConfig: { 
-                            responseMimeType: "application/json",
-                            temperature: 0.5 
+                            responseMimeType: "application/json"
                         }
                     })
                 });
 
                 const data = await response.json();
                 
-                if (response.status === 429) {
-                    throw new Error("APIの無料枠制限を超えました。1分ほど待ってから再度お試しください。");
+                if (response.status === 404) {
+                    throw new Error("モデルが見つかりませんでした (404)。エンドポイントの設定を確認してください。");
                 }
                 
                 if (data.error) throw new Error(`${data.error.message}`);
@@ -163,10 +162,10 @@
             } catch (error) {
                 console.error(error);
                 if (error.message.includes("429") || error.message.includes("limit")) {
-                    quotaDisplay.innerText = "制限超過: 1分待機してください";
+                    quotaDisplay.innerText = "制限超過: 少し待機してください";
                     quotaDisplay.classList.remove('hidden');
                 }
-                alert(error.message);
+                alert("検索エラー: " + error.message);
             } finally {
                 btn.disabled = false; spinner.classList.add('hidden');
             }
