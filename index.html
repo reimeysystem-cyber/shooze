@@ -149,38 +149,38 @@
             spinner.classList.remove('hidden');
 
             try {
-                const prompt = `Search for market data of "${queryVal}" in Japan. Respond strictly in the following JSON format: {"results": [{"name", "amazon_price", "image_url", "amazon_url"}], "average_market_price": number}`;
+                const prompt = `Find current market data for "${queryVal}" in Japan. Respond strictly in JSON format: {"results": [{"name", "amazon_price", "image_url", "amazon_url"}], "average_market_price": number}`;
                 
-                // 修正ポイント: Google検索ツールを使用する場合、具体的なバージョン番号付きのモデル名が必要です
-                const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-001:generateContent?key=${geminiApiKey}`;
+                // エンドポイントを v1beta の gemini-1.5-flash に修正（モデル名に models/ を含める）
+                const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
                 
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: [{ parts: [{ text: prompt }] }],
-                        tools: [{ "google_search": {} }],
+                        tools: [{ "google_search": {} }], // 検索ツールを有効化
                         generationConfig: { 
                             responseMimeType: "application/json",
-                            temperature: 0.2
+                            temperature: 0.1
                         }
                     })
                 });
                 
                 if (!response.ok) {
                     const errData = await response.json();
-                    throw new Error(errData.error?.message || "通信エラーが発生しました。");
+                    throw new Error(errData.error?.message || "API通信エラー");
                 }
                 
                 const data = await response.json();
-                if (!data.candidates || !data.candidates[0].content) throw new Error("AIから有効な回答が得られませんでした。");
+                if (!data.candidates || !data.candidates[0].content) throw new Error("AI回答の形式が不正です");
                 
                 const resultData = JSON.parse(data.candidates[0].content.parts[0].text);
                 displaySearchResults(resultData);
                 resultsSection.classList.remove('hidden');
             } catch (error) {
                 console.error("Search Error:", error);
-                alert("検索中にエラーが発生しました: " + error.message);
+                alert("検索エラー: " + error.message);
             } finally {
                 btn.disabled = false;
                 btnText.innerText = '情報を検索';
